@@ -1,6 +1,5 @@
 import operator
 from functools import reduce
-from typing import List
 
 from django.conf import settings
 from django.db.models import Q
@@ -13,15 +12,15 @@ from apps.text_services.q_processors import QLatinCyrillicProcessor
 def distinct(queryset, base):
     if settings.DATABASES[queryset.db]["ENGINE"] == "django.db.backends.oracle":
         # distinct analogue for Oracle users
-        return base.filter(pk__in=set(queryset.values_list('pk', flat=True)))
+        return base.filter(pk__in=set(queryset.values_list("pk", flat=True)))
     return queryset.distinct()
 
 
 class MultiSymbolSearchFilter(SearchFilter):
     @staticmethod
     def process_terms(
-            processor: QLatinCyrillicProcessor, terms: List[str], orm_lookups: List[str]
-    ) -> List[Q]:
+        processor: QLatinCyrillicProcessor, terms: list[str], orm_lookups: list[str]
+    ) -> list[Q]:
         joined_terms = " ".join(terms)
         processed_terms = processor.process(joined_terms).split(" ")
         return [

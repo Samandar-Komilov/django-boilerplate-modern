@@ -1380,37 +1380,33 @@ def to_cyrillic(text):
         return result
 
     for word in SOFT_SIGN_WORDS:
-        text = re.sub(r"\b(%s)" % word, replace_soft_sign_words, text, flags=re.U)
+        text = re.sub(rf"\b({word})", replace_soft_sign_words, text, flags=re.U)
 
     def replace_exception_words(m):
         """Replace ц (or э) only leaving other characters unchanged"""
-        return "{}{}{}".format(
-            m.group(1)[: m.start(2)],
-            exception_words_rules[m.group(2)],
-            m.group(1)[m.end(2) :],
-        )
+        return f"{m.group(1)[: m.start(2)]}{exception_words_rules[m.group(2)]}{m.group(1)[m.end(2) :]}"
 
     # loop because of python's limit of 100 named groups
     for word in list(TS_WORDS.keys()) + list(E_WORDS.keys()):
-        text = re.sub(r"\b(%s)" % word, replace_exception_words, text, flags=re.U)
+        text = re.sub(rf"\b({word})", replace_exception_words, text, flags=re.U)
 
     # compounds
     text = re.sub(
-        r"(%s)" % "|".join(compounds_first.keys()),
+        rf"({'|'.join(compounds_first.keys())})",
         lambda x: compounds_first[x.group(1)],
         text,
         flags=re.U,
     )
 
     text = re.sub(
-        r"(%s)" % "|".join(compounds_second.keys()),
+        rf"({'|'.join(compounds_second.keys())})",
         lambda x: compounds_second[x.group(1)],
         text,
         flags=re.U,
     )
 
     text = re.sub(
-        r"\b(%s)" % "|".join(beginning_rules.keys()),
+        rf"\b({'|'.join(beginning_rules.keys())})",
         lambda x: beginning_rules[x.group(1)],
         text,
         flags=re.U,
@@ -1424,7 +1420,7 @@ def to_cyrillic(text):
     )
 
     text = re.sub(
-        r"(%s)" % "|".join(LATIN_TO_CYRILLIC.keys()),
+        rf"({'|'.join(LATIN_TO_CYRILLIC.keys())})",
         lambda x: LATIN_TO_CYRILLIC[x.group(1)],
         text,
         flags=re.U,
@@ -1459,7 +1455,7 @@ def to_latin(text):
     )
 
     text = re.sub(
-        r"\b(%s)" % "|".join(beginning_rules.keys()),
+        rf"\b({'|'.join(beginning_rules.keys())})",
         lambda x: beginning_rules[x.group(1)],
         text,
         flags=re.U,
@@ -1475,7 +1471,7 @@ def to_latin(text):
     )
 
     text = re.sub(
-        r"(%s)" % "|".join(CYRILLIC_TO_LATIN.keys()),
+        rf"({'|'.join(CYRILLIC_TO_LATIN.keys())})",
         lambda x: CYRILLIC_TO_LATIN[x.group(1)],
         text,
         flags=re.U,
