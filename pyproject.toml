@@ -1,0 +1,25 @@
+[project]
+name = "django-boilerplate-modern"
+version = "0.1.0"
+description = "Modern Django Boilerplate"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "celery>=5.5.3",
+    "django>=5.2.3",
+    "django-jazzmin>=3.0.1",
+    "django-recaptcha>=4.1.0",
+    "djangorestframework>=3.16.0",
+    "drf-yasg>=1.21.10",
+    "flower>=2.0.1",
+    "psycopg2-binary>=2.9.10",
+    "python-dotenv>=1.1.0",
+    "redis>=6.2.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+    "pytest-django>=4.11.1",
+    "ruff>=0.12.0",
+]
