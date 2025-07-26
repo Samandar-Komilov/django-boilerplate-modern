@@ -1,30 +1,28 @@
-FROM ghcr.io/astral-sh/uv:python3.12-alpine
+FROM python:3.12-slim-bookworm AS base
 
-# Set working directory
+# ================================== Builder stage
+FROM base AS builder
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 WORKDIR /app
 
-# Enable bytecode compilation
-ENV UV_COMPILE_BYTECODE=1
-ENV UV_LINK_MODE=copy
+# Install dependencies
+COPY uv.lock pyproject.toml ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project --no-dev
+
+# Copy project and install it
+COPY . .
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
+
+# ================================== Runtime stage
+FROM base
+WORKDIR /app
+COPY --from=builder /app /app
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Use non-root user for security
-RUN adduser -D appuser
-USER appuser
-
-# Copy only pyproject and lock first for caching
-COPY --chown=appuser:appuser pyproject.toml uv.lock ./
-
-# Install production dependencies only
-RUN --mount=type=cache,target=/home/appuser/.cache/uv \
-    uv sync --locked --no-install-project --no-dev
-
-# Copy full application
-COPY --chown=appuser:appuser . .
-
-# Install the project (editable install or not)
-RUN --mount=type=cache,target=/home/appuser/.cache/uv \
-    uv sync --locked --no-dev
-
-# Entrypoint is defined in docker-compose
-ENTRYPOINT []
+# Django specific settings
+ENV DJANGO_SETTINGS_MODULE=core.settings
+EXPOSE 8000
+CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
