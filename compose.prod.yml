@@ -1,0 +1,69 @@
+services:
+  db:
+    container_name: ${PROJECT_NAME}_db
+    image: postgres:16
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - .env
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_HOST=${DB_HOST} # This might be overridden in prod (e.g., for an external DB)
+      - POSTGRES_PORT=${DB_PORT} # This might be overridden in prod
+      - POSTGRES_HOST_AUTH_METHOD=md5
+      - POSTGRES_INITDB_ARGS=--auth=md5
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.2.4-alpine
+    restart: always
+
+  web:
+    build: .
+    container_name: "${PROJECT_NAME}_web"
+    ports:
+      - "8008:8000"
+    command: sh -c "./entrypoint.prod.sh"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    # volumes:
+    #   - .:/app
+    #   - /app/.venv
+
+  celery:
+    build: .
+    container_name: "${PROJECT_NAME}_celery"
+    command: celery -A core worker --beat --scheduler django --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - db
+
+  # flower:
+  #   build: .
+  #   container_name: "${PROJECT_NAME}_flower"
+  #   command: celery -A core.celery --broker="${CELERY_BROKER_URL}" flower --url_prefix=/flower
+  #   env_file:
+  #     - .env
+  #   ports:
+  #     - "${FLOWER_PORT:-5555}:5555"
+  #   depends_on:
+  #     - celery
+
+volumes:
+  postgres_data:
